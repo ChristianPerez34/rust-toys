@@ -1,11 +1,4 @@
-import {
-    Box,
-    Button,
-    Group,
-    LoadingOverlay,
-    NativeSelect,
-    Stack,
-} from "@mantine/core";
+import {Box, Button, Group, NativeSelect, Stack,} from "@mantine/core";
 import {IconCheck, IconChevronDown, IconChevronLeft, IconX} from "@tabler/icons";
 import {open} from "@tauri-apps/api/dialog";
 import {invoke} from "@tauri-apps/api/tauri";
@@ -21,7 +14,6 @@ export function ImageConverter() {
     const router = useRouter();
     const [selectValue, setSelectValue] = useState("bmp");
     const [files, setFiles] = useState<string[]>([]);
-    const [visible, setVisible] = useState<boolean>(false);
 
     const handleImageConvertButtonClick = () => {
         const notificationId = "convert-image"
@@ -79,7 +71,7 @@ export function ImageConverter() {
         });
     };
 
-    const disableButton = files.length > 0 ? false : true;
+    const disableButton = files.length <= 0;
 
     return (
         <>
