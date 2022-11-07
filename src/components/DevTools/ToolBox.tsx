@@ -15,6 +15,8 @@ export function ToolBox({ children }: ToolBoxProps) {
         textAlign: "center",
         padding: theme.spacing.xl,
         borderRadius: theme.radius.md,
+        width: "auto",
+        height: "100%",
       })}
     >
       {children}

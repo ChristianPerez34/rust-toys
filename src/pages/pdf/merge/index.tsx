@@ -1,29 +1,18 @@
 import { Box, Button, Group, Stack } from "@mantine/core";
 import { showNotification, updateNotification } from "@mantine/notifications";
 import { IconCheck, IconChevronLeft, IconX } from "@tabler/icons";
-import { invoke } from "@tauri-apps/api";
-import { open } from "@tauri-apps/api/dialog";
-import { useEffect, useState } from "react";
-import { PreviewPdfDnD } from "./PreviewPdf";
+// import { dialog, invoke } from "@tauri-apps/api";
 import { useRouter } from "next/router";
-import { ToolBox } from "../DevTools/ToolBox";
-import { Preview } from "./UtilityTypes";
+import { useState } from "react";
+import { ToolBox } from "../../../components/DevTools/ToolBox";
+import { Preview } from "../../../components/Pdf/PdfTypes";
+import { PreviewPdfDnD } from "../../../components/Pdf/PreviewPdf";
 
-export function MergePdf() {
+export default function MergePdfPage() {
   const [previews, setPreviews] = useState<Preview[]>([]);
   const router = useRouter();
-  const [files, setFiles] = useState<string[]>([]);
 
-  const disableButton = files.length <= 0;
-
-  useEffect(() => {
-    setPreviews(
-      files.map((file) => {
-        const filename = file.split("\\").at(-1) || file.split("/").at(-1);
-        return { name: filename || "", filePath: file };
-      })
-    );
-  }, [files]);
+  const disableButton = previews.length <= 0;
 
   const reorderPreviews = (startIndex: number, endIndex: number) => {
     const result = Array.from(previews);
@@ -32,7 +21,8 @@ export function MergePdf() {
     setPreviews(result);
   };
 
-  const handlePdfMergeButtonClick = () => {
+  const handlePdfMergeButtonClick = async () => {
+    const { invoke } = await import("@tauri-apps/api");
     const notificationId = "merge-pdf";
     const files_ = previews.map((file) => file.filePath);
     showNotification({
@@ -44,31 +34,33 @@ export function MergePdf() {
       autoClose: false,
       disallowClose: true,
     });
-    invoke("merge_pdf", { files: files_ })
-      .then((message) => {
-        updateNotification({
-          id: notificationId,
-          title: "Merge success",
-          message: message as string,
-          autoClose: 3000,
-          icon: <IconCheck size={16} />,
-          color: "green",
-        });
-      })
-      .catch((error) => {
-        updateNotification({
-          id: notificationId,
-          title: "Merge failed",
-          message: error as string,
-          autoClose: 3000,
-          icon: <IconX size={16} />,
-          color: "red",
-        });
+
+    try {
+      const message = await invoke<string>("merge_pdf", { files: files_ });
+      updateNotification({
+        id: notificationId,
+        title: "Merge success",
+        message: message,
+        autoClose: 3000,
+        icon: <IconCheck size={16} />,
+        color: "green",
       });
+    } catch (err) {
+      updateNotification({
+        id: notificationId,
+        title: "Merge failed",
+        message: err as string,
+        autoClose: 3000,
+        icon: <IconX size={16} />,
+        color: "red",
+      });
+    }
   };
 
-  const handleDropzoneClick = () => {
-    open({
+  const handleDropzoneClick = async () => {
+    const { dialog } = await import("@tauri-apps/api");
+
+    const selected = await dialog.open({
       multiple: true,
       filters: [
         {
@@ -76,12 +68,22 @@ export function MergePdf() {
           extensions: ["pdf"],
         },
       ],
-    }).then((files) => {
-      if (Array.isArray(files) || files !== null) {
-        setFiles(files as string[]);
-      }
     });
+
+    if (Array.isArray(selected)) {
+      setPreviews(
+        selected.map((file) => {
+          const filename = file.split("\\").at(-1) || file.split("/").at(-1);
+          return { name: filename || "", filePath: file };
+        })
+      );
+    } else if (selected !== null) {
+      const filename =
+        selected.split("\\").at(-1) || selected.split("/").at(-1);
+      setPreviews([{ name: filename || "", filePath: selected }]);
+    }
   };
+
   return (
     <>
       <ToolBox>
@@ -125,7 +127,7 @@ export function MergePdf() {
             >
               merge
             </Button>
-            <Button variant="outline" onClick={() => setFiles([])}>
+            <Button variant="outline" onClick={() => setPreviews([])}>
               clear
             </Button>
           </Group>

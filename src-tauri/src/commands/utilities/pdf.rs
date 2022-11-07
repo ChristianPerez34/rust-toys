@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use directories::UserDirs;
-use printpdf::lopdf::{Document, Error, Bookmark, Object, ObjectId};
 use nanoid::nanoid;
+use printpdf::lopdf::{Bookmark, Document, Error, Object, ObjectId};
 
 pub fn merge_pdf_files(documents: Vec<Document>, output_file_name: &str) -> Result<(), Error> {
     let user_dirs = UserDirs::new().unwrap();
@@ -22,15 +22,15 @@ pub fn merge_pdf_files(documents: Vec<Document>, output_file_name: &str) -> Resu
         max_id = doc.max_id + 1;
 
         documents_pages.extend(
-                doc.get_pages()
+            doc.get_pages()
                 .into_iter()
                 .map(|(_, object_id)| {
                     if !first {
                         let bookmark = Bookmark::new(
-                                String::from(format!("Page_{}", pagenum)),
-                        [0.0, 0.0, 1.0],
-                        0,
-                        object_id,
+                            String::from(format!("Page_{}", pagenum)),
+                            [0.0, 0.0, 1.0],
+                            0,
+                            object_id,
                         );
                         document.add_bookmark(bookmark, None);
                         first = true;
@@ -56,12 +56,12 @@ pub fn merge_pdf_files(documents: Vec<Document>, output_file_name: &str) -> Resu
             "Catalog" => {
                 // Collect a first "Catalog" object and use it for the future "Pages"
                 catalog_object = Some((
-                        if let Some((id, _)) = catalog_object {
-                            id
-                        } else {
-                            *object_id
-                        },
-                object.clone(),
+                    if let Some((id, _)) = catalog_object {
+                        id
+                    } else {
+                        *object_id
+                    },
+                    object.clone(),
                 ));
             }
             "Pages" => {
@@ -76,12 +76,12 @@ pub fn merge_pdf_files(documents: Vec<Document>, output_file_name: &str) -> Resu
                     }
 
                     pages_object = Some((
-                            if let Some((id, _)) = pages_object {
-                                id
-                            } else {
-                                *object_id
-                            },
-                    Object::Dictionary(dictionary),
+                        if let Some((id, _)) = pages_object {
+                            id
+                        } else {
+                            *object_id
+                        },
+                        Object::Dictionary(dictionary),
                     ));
                 }
             }
@@ -94,10 +94,8 @@ pub fn merge_pdf_files(documents: Vec<Document>, output_file_name: &str) -> Resu
         }
     }
 
-    // If no "Pages" found abort
     if pages_object.is_none() {
-        println!("Pages root not found.");
-        panic!("No pages found")
+        return Err(Error::PageNumberNotFound(1));
     }
 
     // Iter over all "Page" and collect with the parent "Pages" created before
@@ -107,8 +105,8 @@ pub fn merge_pdf_files(documents: Vec<Document>, output_file_name: &str) -> Resu
             dictionary.set("Parent", pages_object.as_ref().unwrap().0);
 
             document
-            .objects
-            .insert(*object_id, Object::Dictionary(dictionary));
+                .objects
+                .insert(*object_id, Object::Dictionary(dictionary));
         }
     }
 
@@ -131,16 +129,16 @@ pub fn merge_pdf_files(documents: Vec<Document>, output_file_name: &str) -> Resu
 
         // Set new "Kids" list (collected from documents pages) for "Pages"
         dictionary.set(
-                "Kids",
-        documents_pages
-        .into_iter()
-        .map(|(object_id, _)| Object::Reference(object_id))
-        .collect::<Vec<_>>(),
+            "Kids",
+            documents_pages
+                .into_iter()
+                .map(|(object_id, _)| Object::Reference(object_id))
+                .collect::<Vec<_>>(),
         );
 
         document
-        .objects
-        .insert(pages_object.0, Object::Dictionary(dictionary));
+            .objects
+            .insert(pages_object.0, Object::Dictionary(dictionary));
     }
 
     // Build a new "Catalog" with updated fields
@@ -150,8 +148,8 @@ pub fn merge_pdf_files(documents: Vec<Document>, output_file_name: &str) -> Resu
         dictionary.remove(b"Outlines"); // Outlines not supported in merged PDFs
 
         document
-        .objects
-        .insert(catalog_object.0, Object::Dictionary(dictionary));
+            .objects
+            .insert(catalog_object.0, Object::Dictionary(dictionary));
     }
 
     document.trailer.set("Root", catalog_object.0);
@@ -187,9 +185,9 @@ pub fn merge_pdf_files(documents: Vec<Document>, output_file_name: &str) -> Resu
 pub fn merge_pdf(files: Vec<&str>) -> Result<String, String> {
     let output_file_name = format!("{}.pdf", nanoid!());
     let documents = files
-    .into_iter()
-    .map(|file| Document::load(file).unwrap())
-    .collect::<Vec<Document>>();
+        .into_iter()
+        .map(|file| Document::load(file).unwrap())
+        .collect::<Vec<Document>>();
     match merge_pdf_files(documents, &output_file_name) {
         Ok(()) => Ok(format!("Check downloads directory for {}", &output_file_name).into()),
         Err(_) => Err("Failed to merge files".into()),

@@ -9,13 +9,13 @@ import {
   IconTools,
   IconUser,
 } from "@tabler/icons";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { NavbarLink } from "./NavbarLink";
 
 const linksData = [
   { icon: IconHome2, label: "All tools", links_to: "/" },
   { icon: IconGauge, label: "Converters", links_to: "/converters" },
-  { icon: IconTools, label: "Utilities", links_to: "/utilities" },
+  { icon: IconTools, label: "Pdf", links_to: "/pdf" },
   {
     icon: IconDeviceDesktopAnalytics,
     label: "Encoders / Decoders",
