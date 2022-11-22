@@ -5,7 +5,7 @@
 
 mod commands;
 use commands::coders::base64::{base64_image, base64_text};
-use commands::converters::converters::convert_image;
+use commands::converters::converters::{convert_image, convert_json_yaml};
 use commands::utilities::pdf::merge_pdf;
 
 fn main() {
@@ -15,6 +15,7 @@ fn main() {
             merge_pdf,
             base64_text,
             base64_image,
+            convert_json_yaml
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -23,6 +23,7 @@ directories = "4.0.1"
 nanoid = "0.4.0"
 base64 = "0.13.1"
 regex = "1.7.0"
+serde_yaml = "0.9.14"
 
 [features]
 # by default Tauri runs in production mode
